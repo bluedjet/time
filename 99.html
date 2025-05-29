@@ -1,0 +1,159 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>6〜9の段 タイムアタック</title>
+  <style>
+    body {
+      background-color: #111;
+      color: #f0f0f0;
+      font-family: 'Segoe UI', sans-serif;
+      text-align: center;
+      padding: 30px;
+    }
+    .question {
+      font-size: 32px;
+      margin: 20px 0;
+      color: #00ffcc;
+    }
+    .info {
+      font-size: 20px;
+      margin: 10px 0;
+    }
+    select, input[type='number'] {
+      font-size: 18px;
+      padding: 5px;
+      margin: 10px;
+      background-color: #222;
+      color: #fff;
+      border: 1px solid #555;
+      border-radius: 5px;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 18px;
+      margin: 10px;
+      background-color: #00ffcc;
+      color: #000;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #00ccaa;
+    }
+    #cuteImage {
+      display: none;
+      margin-top: 20px;
+      max-width: 200px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1 style="color:#00ffcc;">6〜9の段 タイムアタック</h1>
+  <div class="info">
+    レベル選択: 
+    <select id="levelSelect">
+      <option value="60">レベル1（60秒）</option>
+      <option value="50">レベル2（50秒）</option>
+      <option value="40">レベル3（40秒）</option>
+      <option value="30">レベル4（30秒）</option>
+      <option value="20">レベル5（20秒）</option>
+    </select>
+  </div>
+  <div class="info">残り時間: <span id="timer">--</span> 秒</div>
+  <div class="info">正解数: <span id="score">0</span>/10</div>
+  <div class="info">ベストタイム: <span id="bestTime">--</span> 秒</div>
+
+  <div class="question" id="question">スタートを押してください</div>
+  <input type="number" id="answerInput" placeholder="こたえ" disabled>
+  <button id="checkBtn" onclick="checkAnswer()" disabled>こたえあわせ</button><br>
+  <button onclick="startGame()">スタート</button>
+
+  <img id="cuteImage" src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/26/Emoji_u1f638.svg/240px-Emoji_u1f638.svg.png" alt="cute cat">
+
+  <audio id="correctSound" src="https://www.soundjay.com/button/beep-07.wav" preload="auto"></audio>
+  <audio id="clearSound" src="https://www.soundjay.com/human/sounds/applause-8.mp3" preload="auto"></audio>
+
+  <script>
+    let currentA = 0;
+    let currentB = 0;
+    let score = 0;
+    let timeLeft = 0;
+    let timerId = null;
+    let startTime = 0;
+    let bestTime = localStorage.getItem('bestTime') || "--";
+
+    document.getElementById('bestTime').textContent = bestTime;
+
+    function getRandomInt(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    function newQuestion() {
+      currentA = getRandomInt(6, 9);
+      currentB = getRandomInt(1, 9);
+      document.getElementById('question').textContent = `${currentA} × ${currentB} = ?`;
+      document.getElementById('answerInput').value = '';
+      document.getElementById('answerInput').focus();
+    }
+
+    function checkAnswer() {
+      const userAnswer = parseInt(document.getElementById('answerInput').value, 10);
+      if (userAnswer === currentA * currentB) {
+        score++;
+        document.getElementById('score').textContent = score;
+        document.getElementById('correctSound').play();
+        if (score >= 10) {
+          const clearTime = Math.floor((Date.now() - startTime) / 1000);
+          if (bestTime === "--" || clearTime < bestTime) {
+            localStorage.setItem('bestTime', clearTime);
+            document.getElementById('bestTime').textContent = clearTime;
+          }
+          endGame(true);
+          return;
+        }
+      }
+      newQuestion();
+    }
+
+    function startGame() {
+      const selectedLevel = parseInt(document.getElementById('levelSelect').value, 10);
+      timeLeft = selectedLevel;
+      score = 0;
+      startTime = Date.now();
+
+      document.getElementById('score').textContent = score;
+      document.getElementById('timer').textContent = timeLeft;
+      document.getElementById('answerInput').disabled = false;
+      document.getElementById('checkBtn').disabled = false;
+      document.getElementById('cuteImage').style.display = "none";
+      newQuestion();
+
+      timerId = setInterval(() => {
+        timeLeft--;
+        document.getElementById('timer').textContent = timeLeft;
+        if (timeLeft <= 0) {
+          endGame(false);
+        }
+      }, 1000);
+    }
+
+    function endGame(success) {
+      clearInterval(timerId);
+      document.getElementById('answerInput').disabled = true;
+      document.getElementById('checkBtn').disabled = true;
+      if (success) {
+        document.getElementById('question').textContent = "🎉クリア！すごい！";
+        document.getElementById('clearSound').play();
+        document.getElementById('cuteImage').style.display = "block";
+      } else {
+        document.getElementById('question').textContent = "⏱時間切れ！また挑戦してね";
+      }
+    }
+  </script>
+
+</body>
+</html>
